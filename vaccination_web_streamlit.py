@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import os
 
-# تحميل ملف البيانات
-file_path = "الملك_فهد_محدث.xlsx"
+# تحميل ملف البيانات من الملف المحدد فقط
+file_path = "/mnt/data/الملك فهد.xlsx"
 
-# التحقق مما إذا كان ملف Excel موجودًا، وإذا لم يكن موجودًا يتم إنشاء ملف جديد
-if not os.path.exists(file_path):
-    df = pd.DataFrame(columns=["No.", "Name", "ID Number", "Birth Date", "Class", "Section", "Vaccination Status", "Reason"])
-    df.to_excel(file_path, index=False)
-else:
+# التحقق مما إذا كان ملف Excel موجودًا
+if os.path.exists(file_path):
     df = pd.read_excel(file_path)
+else:
+    st.error("❌ ملف البيانات غير موجود! يرجى رفع الملف الصحيح.")
+    st.stop()
 
 # واجهة Streamlit
 st.title("🩺 نظام تسجيل التطعيمات للطلاب")
