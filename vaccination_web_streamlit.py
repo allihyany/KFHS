@@ -6,45 +6,47 @@ import plotly.express as px
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-# إعداد تصميم الواجهة بأسلوب حديث
+# إعداد تصميم الواجهة بأسلوب أوراكل
 st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
 
-# تطبيق تنسيقات مخصصة لجعل الواجهة أكثر حداثة وجاذبية
+# تطبيق تنسيقات مخصصة لجعل الواجهة مستوحاة من تصميم أوراكل
 st.markdown("""
     <style>
         body {
             direction: rtl;
             text-align: right;
             font-family: 'Cairo', sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f4f4f9;
         }
         .main-header {
-            background-color: #3a7bd5;
+            background-color: #2a5298;
             color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 28px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-        .sidebar {
-            background-color: #eef2f6;
             padding: 20px;
-            height: 100%;
-        }
-        .sidebar-item {
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #3a7bd5;
-            color: white;
             text-align: center;
-            border-radius: 8px;
+            font-size: 30px;
+            border-radius: 10px;
             font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #2a5298;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .sidebar-item:hover {
-            background-color: #2a5d99;
+        .btn:hover {
+            background-color: #1d3b73;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -130,96 +132,84 @@ if not st.session_state["authenticated"]:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-            st.query_params(page="main")
+            st.experimental_set_query_params(page="main")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
-    # قائمة جانبية للتنقل
-    st.sidebar.markdown("<div class='sidebar'>", unsafe_allow_html=True)
-    page = st.sidebar.radio("🔍 التنقل", ["التقارير", "إدارة البيانات", "الخروج"])
-    st.sidebar.markdown("</div>", unsafe_allow_html=True)
-
     # زر العودة إلى الصفحة الرئيسية
     def back_to_main():
         st.session_state.clear()
         st.experimental_set_query_params(page="login")
 
-    if page == "التقارير":
-        st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
-        if not df.empty:
-            st.write("📌 **إنشاء التقارير حسب الفئات المختلفة**")
+    # عرض صفحة التقارير
+    st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
+    if not df.empty:
+        st.write("📌 **إنشاء التقارير حسب الفئات المختلفة**")
 
-            # تقرير بالفصل
-            class_selected = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
-            section_selected = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_selected]["Section"].dropna().unique().tolist()) if class_selected != "كل الصفوف" else [])
+        # تقرير بالفصل
+        class_selected = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
+        section_selected = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_selected]["Section"].dropna().unique().tolist()) if class_selected != "كل الصفوف" else [])
 
-            filtered_df = df.copy()
-            if class_selected != "كل الصفوف":
-                filtered_df = filtered_df[filtered_df["Class"] == class_selected]
-            if section_selected:
-                filtered_df = filtered_df[filtered_df["Section"] == section_selected]
+        filtered_df = df.copy()
+        if class_selected != "كل الصفوف":
+            filtered_df = filtered_df[filtered_df["Class"] == class_selected]
+        if section_selected:
+            filtered_df = filtered_df[filtered_df["Section"] == section_selected]
 
-            if not filtered_df.empty:
-                st.write("📌 **تقرير الفصل المحدد**")
-                st.dataframe(filtered_df)
-                report_file = f"report_class_{class_selected}_{section_selected}.xlsx"
-                filtered_df.to_excel(report_file, index=False)
-                with open(report_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير الفصل (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
-
-                pdf_file = f"report_class_{class_selected}_{section_selected}.pdf"
-                create_pdf(filtered_df, pdf_file)
-                with open(pdf_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير الفصل (PDF)", f, file_name=pdf_file, mime="application/pdf")
-
-            # تقرير بغير المتطعمين
-            not_vaccinated_df = df[df["Vaccination Status"] == "لم يتم التطعيم"]
-            if not not_vaccinated_df.empty:
-                st.write("📌 **تقرير غير المتطعمين**")
-                st.dataframe(not_vaccinated_df)
-                report_file = "report_not_vaccinated.xlsx"
-                not_vaccinated_df.to_excel(report_file, index=False)
-                with open(report_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير غير المتطعمين (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
-
-                pdf_file = "report_not_vaccinated.pdf"
-                create_pdf(not_vaccinated_df, pdf_file)
-                with open(pdf_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير غير المتطعمين (PDF)", f, file_name=pdf_file, mime="application/pdf")
-
-            # تقرير بالمتطعمين
-            vaccinated_df = df[df["Vaccination Status"] == "تم التطعيم"]
-            if not vaccinated_df.empty:
-                st.write("📌 **تقرير المتطعمين**")
-                st.dataframe(vaccinated_df)
-                report_file = "report_vaccinated.xlsx"
-                vaccinated_df.to_excel(report_file, index=False)
-                with open(report_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير المتطعمين (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
-
-                pdf_file = "report_vaccinated.pdf"
-                create_pdf(vaccinated_df, pdf_file)
-                with open(pdf_file, "rb") as f:
-                    st.download_button("📥 تحميل تقرير المتطعمين (PDF)", f, file_name=pdf_file, mime="application/pdf")
-
-            # تقرير للكل
-            st.write("📌 **تقرير كامل لجميع الطلاب**")
-            st.dataframe(df)
-            report_file = "report_all_students.xlsx"
-            df.to_excel(report_file, index=False)
+        if not filtered_df.empty:
+            st.write("📌 **تقرير الفصل المحدد**")
+            st.dataframe(filtered_df)
+            report_file = f"report_class_{class_selected}_{section_selected}.xlsx"
+            filtered_df.to_excel(report_file, index=False)
             with open(report_file, "rb") as f:
-                st.download_button("📥 تحميل التقرير الكامل (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
+                st.download_button("📥 تحميل تقرير الفصل (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
 
-            pdf_file = "report_all_students.pdf"
-            create_pdf(df, pdf_file)
+            pdf_file = f"report_class_{class_selected}_{section_selected}.pdf"
+            create_pdf(filtered_df, pdf_file)
             with open(pdf_file, "rb") as f:
-                st.download_button("📥 تحميل التقرير الكامل (PDF)", f, file_name=pdf_file, mime="application/pdf")
-        else:
-            st.warning("⚠️ لا توجد بيانات متاحة لإنشاء التقارير.")
+                st.download_button("📥 تحميل تقرير الفصل (PDF)", f, file_name=pdf_file, mime="application/pdf")
 
-    elif page == "إدارة البيانات":
-        st.markdown("<div class='main-header'>⚙️ إدارة البيانات</div>", unsafe_allow_html=True)
-        st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
+        # تقرير بغير المتطعمين
+        not_vaccinated_df = df[df["Vaccination Status"] == "لم يتم التطعيم"]
+        if not not_vaccinated_df.empty:
+            st.write("📌 **تقرير غير المتطعمين**")
+            st.dataframe(not_vaccinated_df)
+            report_file = "report_not_vaccinated.xlsx"
+            not_vaccinated_df.to_excel(report_file, index=False)
+            with open(report_file, "rb") as f:
+                st.download_button("📥 تحميل تقرير غير المتطعمين (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
 
-    elif page == "الخروج":
-        back_to_main()
+            pdf_file = "report_not_vaccinated.pdf"
+            create_pdf(not_vaccinated_df, pdf_file)
+            with open(pdf_file, "rb") as f:
+                st.download_button("📥 تحميل تقرير غير المتطعمين (PDF)", f, file_name=pdf_file, mime="application/pdf")
+
+        # تقرير بالمتطعمين
+        vaccinated_df = df[df["Vaccination Status"] == "تم التطعيم"]
+        if not vaccinated_df.empty:
+            st.write("📌 **تقرير المتطعمين**")
+            st.dataframe(vaccinated_df)
+            report_file = "report_vaccinated.xlsx"
+            vaccinated_df.to_excel(report_file, index=False)
+            with open(report_file, "rb") as f:
+                st.download_button("📥 تحميل تقرير المتطعمين (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
+
+            pdf_file = "report_vaccinated.pdf"
+            create_pdf(vaccinated_df, pdf_file)
+            with open(pdf_file, "rb") as f:
+                st.download_button("📥 تحميل تقرير المتطعمين (PDF)", f, file_name=pdf_file, mime="application/pdf")
+
+        # تقرير للكل
+        st.write("📌 **تقرير كامل لجميع الطلاب**")
+        st.dataframe(df)
+        report_file = "report_all_students.xlsx"
+        df.to_excel(report_file, index=False)
+        with open(report_file, "rb") as f:
+            st.download_button("📥 تحميل التقرير الكامل (Excel)", f, file_name=report_file, mime="application/vnd.ms-excel")
+
+        pdf_file = "report_all_students.pdf"
+        create_pdf(df, pdf_file)
+        with open(pdf_file, "rb") as f:
+            st.download_button("📥 تحميل التقرير الكامل (PDF)", f, file_name=pdf_file, mime="application/pdf")
+    else:
+        st.warning("⚠️ لا توجد بيانات متاحة لإنشاء التقارير.")
