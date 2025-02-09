@@ -82,7 +82,10 @@ else:
             
             # رسم بياني لحالة التطعيم
             fig, ax = plt.subplots()
-            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["green", "red"])
+            if vaccinated_count + not_vaccinated_count > 0:
+                ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["green", "red"])
+            else:
+                st.warning("⚠️ لا يوجد طلاب مسجلين حتى الآن، لا يمكن عرض الرسم البياني.")
             st.pyplot(fig)
             
             # عرض جدول للطلاب غير المطعمين
