@@ -20,7 +20,7 @@ if not st.session_state["authenticated"]:
         if username_input == USERNAME and password_input == PASSWORD:
             st.session_state["authenticated"] = True
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
