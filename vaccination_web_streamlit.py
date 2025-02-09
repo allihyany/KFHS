@@ -20,7 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1058253616": "0502049396"}
+USERS = {"1": "1"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
