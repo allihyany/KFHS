@@ -191,10 +191,13 @@ if st.session_state["active_page"] == "manage_students":
     if st.button("🔙 العودة إلى التقارير", key="back_to_reports_manage_students"):
         st.session_state["active_page"] = "reports"
 
-# صفحة رفع البيانات
-if st.session_state["active_page"] == "upload_data":
-    st.markdown("<div class='main-header'>📤 رفع البيانات</div>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("🔼 قم برفع ملف Excel يحتوي على بيانات الطلاب:", type=["xlsx"])
+    if st.button("🗑️ حذف جميع الطلاب"):
+        if st.session_state["df"].empty:
+            st.warning("⚠️ لا توجد بيانات لحذفها.")
+        else:
+            st.session_state["df"] = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Gender", "Date of Birth", "Phone Number", "Vaccination Status"])
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
+            st.success("✅ تم حذف جميع الطلاب بنجاح!")
 
     if uploaded_file is not None:
         try:
