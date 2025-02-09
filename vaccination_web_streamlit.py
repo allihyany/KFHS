@@ -169,7 +169,7 @@ if st.session_state["active_page"] == "upload_data":
         except Exception as e:
             st.error(f"❌ حدث خطأ أثناء رفع الملف: {e}")
 
-    if st.button("🔙 العودة إلى التقارير"):
+    if st.button("🔙 العودة إلى التقارير", key="back_to_reports"):
         st.session_state["active_page"] = "reports"
 
 # صفحة التقارير
