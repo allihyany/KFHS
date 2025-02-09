@@ -15,13 +15,22 @@ if "username" not in st.session_state:
 # تحديد مسار حفظ الملف
 DATA_FILE = "student_data.xlsx"
 
-# تحميل البيانات أو إنشاء ملف جديد إذا لم يكن موجودًا
-if os.path.exists(DATA_FILE):
-    df = pd.read_excel(DATA_FILE)
-else:
+# التحقق من صحة الملف قبل قراءته
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            return pd.read_excel(DATA_FILE)
+        except Exception:
+            st.warning("⚠️ الملف تالف أو غير صالح، سيتم إعادة إنشائه.")
+            os.remove(DATA_FILE)
+    
     df = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Vaccination Status"])
     df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية
     df.to_excel(DATA_FILE, index=False)
+    return df
+
+# تحميل البيانات
+df = load_data()
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
@@ -65,7 +74,7 @@ else:
     with tab3:
         st.subheader("🔍 البحث وتحديث بيانات الطلاب")
         if os.path.exists(DATA_FILE):
-            df = pd.read_excel(DATA_FILE)  # إعادة تحميل البيانات عند البحث
+            df = load_data()
             
             # اختيار الصف والقسم كفلاتر للبحث
             class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
