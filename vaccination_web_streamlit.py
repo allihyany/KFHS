@@ -80,29 +80,45 @@ else:
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
-    if page == "📊 الإحصائيات":
-        st.markdown("<div class='main-header'>📊 الإحصائيات التفصيلية</div>", unsafe_allow_html=True)
+    if page == "📂 إدارة البيانات":
+        st.markdown("<div class='main-header'>📂 إدارة البيانات</div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"], key="upload")
+        
+        if uploaded_file is not None:
+            st.session_state["df"] = pd.read_excel(uploaded_file)
+            st.session_state["df"]["Vaccination Status"] = "لم يتم التطعيم"
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
+            st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
+            st.rerun()
+        
+        if os.path.exists(DATA_FILE):
+            st.write("📁 البيانات الحالية:")
+            st.dataframe(st.session_state["df"])
+            if st.button("🗑️ حذف البيانات", use_container_width=True):
+                os.remove(DATA_FILE)
+                st.session_state["df"] = None
+                st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
+                st.rerun()
+    
+    elif page == "🔍 البحث والتحديث":
+        st.markdown("<div class='main-header'>🔍 البحث وتحديث بيانات الطلاب</div>", unsafe_allow_html=True)
         if not df.empty:
-            total_students = len(df)
-            vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
-            not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
-            
-            # التحقق من وجود عمود الجنس قبل استخدامه
-            if "Gender" in df.columns:
-                male_students = len(df[df["Gender"] == "ذكر"])
-                female_students = len(df[df["Gender"] == "أنثى"])
-            else:
-                male_students = female_students = 0
-            
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
-            col2.metric(label="💉 تم التطعيم", value=vaccinated_count)
-            col3.metric(label="⚠️ لم يتم التطعيم", value=not_vaccinated_count)
-            col4.metric(label="👦 عدد الذكور", value=male_students)
-            col5.metric(label="👧 عدد الإناث", value=female_students)
-            
-            fig, ax = plt.subplots()
-            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["#2a9df4", "#a3d5ff"])
-            st.pyplot(fig)
-        else:
-            st.warning("⚠️ لا توجد بيانات متاحة.")
+            selected_student = st.selectbox("🔹 اختر الطالب:", df["Name"].unique())
+            student_data = df[df["Name"] == selected_student]
+            st.write(student_data)
+            new_status = st.radio("💉 تحديث حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"])
+            if st.button("💾 تحديث الحالة", use_container_width=True):
+                df.loc[df["Name"] == selected_student, "Vaccination Status"] = new_status
+                df.to_excel(DATA_FILE, index=False)
+                st.success("✅ تم تحديث البيانات بنجاح!")
+                st.rerun()
+    
+    elif page == "👤 إدارة المستخدمين":
+        st.markdown("<div class='main-header'>👤 إدارة المستخدمين</div>", unsafe_allow_html=True)
+        new_username = st.text_input("📌 اسم المستخدم الجديد:")
+        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
+        
+        if st.button("➕ إضافة مستخدم", use_container_width=True):
+            if new_username and new_password:
+                USERS[new_username] = new_password
+                st.success("✅ تم إضافة المستخدم بنجاح!")
