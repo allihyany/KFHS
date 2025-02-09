@@ -122,7 +122,8 @@ if not st.session_state["authenticated"]:
 else:
     # زر العودة إلى الصفحة الرئيسية
     def back_to_main():
-        st.session_state.clear()
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.experimental_rerun()
 
     st.markdown("<div class='back-button'>", unsafe_allow_html=True)
