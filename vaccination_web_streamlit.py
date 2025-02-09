@@ -116,7 +116,7 @@ if not st.session_state["authenticated"]:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-            st.query_params(page="main")
+            st.experimental_set_query_params(page="main")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
