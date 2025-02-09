@@ -180,6 +180,34 @@ if st.session_state["active_page"] == "manage_data":
     st.markdown("<div class='main-header'>⚙️ إدارة البيانات</div>", unsafe_allow_html=True)
     st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
 
+    # إدخال البيانات
+    with st.form("add_student_form"):
+        st.subheader("إضافة بيانات الطالب")
+        name = st.text_input("اسم الطالب")
+        id_number = st.text_input("رقم الهوية")
+        student_class = st.text_input("الصف")
+        section = st.text_input("الفصل")
+        gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
+        dob = st.date_input("تاريخ الميلاد")
+        phone = st.text_input("رقم الهاتف")
+        vaccination_status = st.selectbox("حالة التطعيم", ["تم التطعيم", "لم يتم التطعيم"])
+        submit = st.form_submit_button("إضافة الطالب")
+
+        if submit:
+            new_data = {
+                "Name": name,
+                "ID Number": id_number,
+                "Class": student_class,
+                "Section": section,
+                "Gender": gender,
+                "Date of Birth": dob,
+                "Phone Number": phone,
+                "Vaccination Status": vaccination_status
+            }
+            df = df.append(new_data, ignore_index=True)
+            df.to_excel(DATA_FILE, index=False)
+            st.success("✅ تم إضافة الطالب بنجاح!")
+
     if st.button("🔙 العودة إلى التقارير"):
         st.session_state["active_page"] = "reports"
 
