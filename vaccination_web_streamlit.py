@@ -4,18 +4,18 @@ import os
 import matplotlib.pyplot as plt
 import streamlit.components.v1 as components
 
-# إعداد تصميم الواجهة بأسلوب يشبه Oracle
-st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
+# إعداد تصميم الواجهة بأسلوب مدرسي بسيط
+st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="🎒", layout="wide")
 
-# تطبيق تنسيقات مخصصة لجعل الواجهة RTL وتحسين الألوان بأسلوب Oracle
+# تطبيق تنسيقات مخصصة لجعل الواجهة أكثر وضوحًا وجاذبية للبيئة المدرسية
 st.markdown("""
     <style>
-        body {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; background-color: #f4f6f9;}
-        .sidebar .sidebar-content {background: linear-gradient(135deg, #283e4a, #1f2a36); color: white; padding: 20px;}
-        .stButton>button {background-color: #1f77b4; color: white; border-radius: 8px; font-size: 16px;}
-        .stMetric {text-align: center; background-color: #e8f0fe; padding: 10px; border-radius: 10px;}
-        .main-header {background-color: #1f2a36; color: white; padding: 15px; text-align: center; font-size: 24px; border-radius: 5px;}
-        .card {background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);}
+        body {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; background-color: #fdfdfd;}
+        .sidebar .sidebar-content {background: linear-gradient(135deg, #2a9df4, #62b6f7); color: white; padding: 20px; border-radius: 8px;}
+        .stButton>button {background-color: #2a9df4; color: white; border-radius: 8px; font-size: 18px; padding: 10px; width: 100%;}
+        .stMetric {text-align: center; background-color: #dff6ff; padding: 10px; border-radius: 10px;}
+        .main-header {background-color: #62b6f7; color: white; padding: 15px; text-align: center; font-size: 28px; border-radius: 8px; font-weight: bold;}
+        .card {background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 10px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -67,7 +67,7 @@ if not st.session_state["authenticated"]:
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
-    # إنشاء أزرار التنقل بأسلوب Oracle
+    # إنشاء أزرار التنقل بأسلوب مدرسي واضح وكبير
     st.sidebar.title("📌 القائمة الرئيسية")
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
@@ -91,7 +91,7 @@ else:
                 st.rerun()
     
     elif page == "📊 الإحصائيات":
-        st.markdown("<div class='main-header'>📊 الإحصائيات المفصلة</div>", unsafe_allow_html=True)
+        st.markdown("<div class='main-header'>📊 الإحصائيات التفصيلية</div>", unsafe_allow_html=True)
         if not df.empty:
             total_students = len(df)
             vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
@@ -108,7 +108,7 @@ else:
             col5.metric(label="👧 عدد الإناث", value=female_students)
             
             fig, ax = plt.subplots()
-            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["#1e88e5", "#bbdefb"])
+            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["#2a9df4", "#a3d5ff"])
             st.pyplot(fig)
         else:
             st.warning("⚠️ لا توجد بيانات متاحة.")
