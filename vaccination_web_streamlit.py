@@ -42,7 +42,7 @@ def load_data():
             st.warning("⚠️ الملف تالف أو غير صالح، سيتم إعادة إنشائه.")
             os.remove(DATA_FILE)
     
-    df = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Vaccination Status"])
+    df = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Gender", "Date of Birth", "Phone Number", "Vaccination Status"])
     df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية
     df.to_excel(DATA_FILE, index=False)
     return df
@@ -72,37 +72,43 @@ else:
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
-    if page == "🔍 البحث والتحديث":
-        st.markdown("<div class='main-header'>🔍 البحث وتحديث بيانات الطلاب</div>", unsafe_allow_html=True)
-        if not df.empty:
-            class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
-            section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df["Section"].dropna().unique().tolist()))
-            
-            filtered_df = df.copy()
-            if class_filter != "كل الصفوف":
-                filtered_df = filtered_df[filtered_df["Class"] == class_filter]
-            if section_filter != "كل الفصول":
-                filtered_df = filtered_df[filtered_df["Section"] == section_filter]
-            
-            if not filtered_df.empty:
-                selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df.index, 
-                                                format_func=lambda x: f"{filtered_df.loc[x, 'Name']} - {filtered_df.loc[x, 'ID Number']}")
-                student = filtered_df.loc[selected_student]
-                st.text(f"👤 الاسم: {student['Name']}")
-                st.text(f"🆔 رقم الهوية: {student['ID Number']}")
-                vaccination_status = st.radio("💉 حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"], key="vaccination")
-                if st.button("💾 تحديث البيانات", use_container_width=True):
-                    df.at[selected_student, "Vaccination Status"] = vaccination_status
-                    df.to_excel(DATA_FILE, index=False)
-                    st.success("✅ تم تحديث البيانات بنجاح!")
-                    st.rerun()
-    
-    elif page == "👤 إدارة المستخدمين":
-        st.markdown("<div class='main-header'>👤 إدارة المستخدمين</div>", unsafe_allow_html=True)
-        new_username = st.text_input("📌 اسم المستخدم الجديد:")
-        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
+    if page == "📂 إدارة البيانات":
+        st.markdown("<div class='main-header'>📂 إدارة البيانات</div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"], key="upload")
         
-        if st.button("➕ إضافة مستخدم", use_container_width=True):
-            if new_username and new_password:
-                USERS[new_username] = new_password
-                st.success("✅ تم إضافة المستخدم بنجاح!")
+        if uploaded_file is not None:
+            st.session_state["df"] = pd.read_excel(uploaded_file)
+            st.session_state["df"]["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية عند التحميل
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
+            st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
+            st.rerun()
+        
+        if os.path.exists(DATA_FILE):
+            if st.button("🗑️ حذف البيانات", use_container_width=True):
+                os.remove(DATA_FILE)
+                st.session_state["df"] = None
+                st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
+                st.rerun()
+    
+    elif page == "📊 الإحصائيات":
+        st.markdown("<div class='main-header'>📊 الإحصائيات المفصلة</div>", unsafe_allow_html=True)
+        if not df.empty:
+            total_students = len(df)
+            vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
+            not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
+            
+            male_students = len(df[df["Gender"] == "ذكر"])
+            female_students = len(df[df["Gender"] == "أنثى"])
+            
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
+            col2.metric(label="💉 تم التطعيم", value=vaccinated_count)
+            col3.metric(label="⚠️ لم يتم التطعيم", value=not_vaccinated_count)
+            col4.metric(label="👦 عدد الذكور", value=male_students)
+            col5.metric(label="👧 عدد الإناث", value=female_students)
+            
+            fig, ax = plt.subplots()
+            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["#1e88e5", "#bbdefb"])
+            st.pyplot(fig)
+        else:
+            st.warning("⚠️ لا توجد بيانات متاحة.")
