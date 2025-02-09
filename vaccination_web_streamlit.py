@@ -116,15 +116,14 @@ if not st.session_state["authenticated"]:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-            st.experimental_rerun()
+            st.experimental_set_query_params(page="main")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
     # زر العودة إلى الصفحة الرئيسية
     def back_to_main():
         st.session_state.clear()
-        st.session_state["authenticated"] = False
-        st.experimental_rerun()
+        st.experimental_set_query_params(page="login")
 
     st.markdown("<div class='back-button'>", unsafe_allow_html=True)
     if st.button("🔙 العودة إلى الصفحة الرئيسية (أعلى)", key="top-back-button"):
