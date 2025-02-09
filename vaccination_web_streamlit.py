@@ -11,11 +11,13 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "username" not in st.session_state:
     st.session_state["username"] = ""
+if "df" not in st.session_state:
+    st.session_state["df"] = None
 
 # تحديد مسار حفظ الملف
 DATA_FILE = "student_data.xlsx"
 
-# التحقق من صحة الملف قبل قراءته
+# تحميل البيانات عند تشغيل التطبيق مرة واحدة فقط
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
@@ -29,8 +31,10 @@ def load_data():
     df.to_excel(DATA_FILE, index=False)
     return df
 
-# تحميل البيانات
-df = load_data()
+if st.session_state["df"] is None:
+    st.session_state["df"] = load_data()
+
+df = st.session_state["df"]
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
@@ -55,9 +59,9 @@ else:
         uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"])
         
         if uploaded_file is not None:
-            df = pd.read_excel(uploaded_file)
-            df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية عند التحميل
-            df.to_excel(DATA_FILE, index=False)
+            st.session_state["df"] = pd.read_excel(uploaded_file)
+            st.session_state["df"]["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية عند التحميل
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
             st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
             st.rerun()
         elif os.path.exists(DATA_FILE):
@@ -68,8 +72,26 @@ else:
         # زر لحذف البيانات
         if os.path.exists(DATA_FILE) and st.button("🗑️ حذف البيانات"):
             os.remove(DATA_FILE)
+            st.session_state["df"] = None
             st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
             st.rerun()
+    
+    with tab2:
+        st.subheader("📊 الإحصائيات")
+        if not df.empty:
+            total_students = len(df)
+            vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
+            not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
+            
+            st.text(f"👨‍🎓 إجمالي عدد الطلاب: {total_students}")
+            st.text(f"💉 عدد الطلاب الذين تم تطعيمهم: {vaccinated_count}")
+            st.text(f"⚠️ عدد الطلاب غير المطعمين: {not_vaccinated_count}")
+            
+            fig, ax = plt.subplots()
+            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["green", "red"])
+            st.pyplot(fig)
+        else:
+            st.warning("⚠️ لا توجد بيانات متاحة.")
     
     with tab3:
         st.subheader("🔍 البحث وتحديث بيانات الطلاب")
@@ -87,22 +109,28 @@ else:
                 selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df.index, 
                                                 format_func=lambda x: f"{filtered_df.loc[x, 'Name']} - {filtered_df.loc[x, 'ID Number']}")
                 student = filtered_df.loc[selected_student]
+                st.text(f"👤 الاسم: {student['Name']}")
+                st.text(f"🆔 رقم الهوية: {student['ID Number']}")
+                st.text(f"🏫 الصف: {student['Class']}")
+                st.text(f"📚 الفصل: {student['Section']}")
+                vaccination_status = st.selectbox("💉 حالة التطعيم:", ["", "تم التطعيم", "لم يتم التطعيم"], 
+                                                  index=["", "تم التطعيم", "لم يتم التطعيم"].index(student.get("Vaccination Status", "")) if pd.notna(student.get("Vaccination Status")) else 0)
+                if st.button("💾 تحديث البيانات"):
+                    df.at[selected_student, "Vaccination Status"] = vaccination_status
+                    df.to_excel(DATA_FILE, index=False)
+                    st.success("✅ تم تحديث البيانات بنجاح!")
+                    st.rerun()
             else:
                 st.warning("⚠️ لا يوجد طلاب مطابقون للمعايير المحددة.")
-                st.stop()
-            
-            st.text(f"👤 الاسم: {student['Name']}")
-            st.text(f"🆔 رقم الهوية: {student['ID Number']}")
-            st.text(f"🏫 الصف: {student['Class']}")
-            st.text(f"📚 الفصل: {student['Section']}")
-            
-            vaccination_status = st.selectbox("💉 حالة التطعيم:", ["", "تم التطعيم", "لم يتم التطعيم"], 
-                                              index=["", "تم التطعيم", "لم يتم التطعيم"].index(student.get("Vaccination Status", "")) if pd.notna(student.get("Vaccination Status")) else 0)
-            
-            if st.button("💾 تحديث البيانات"):
-                df.at[selected_student, "Vaccination Status"] = vaccination_status
-                df.to_excel(DATA_FILE, index=False)
-                st.success("✅ تم تحديث البيانات بنجاح!")
-                st.rerun()
-        else:
-            st.warning("⚠️ لا توجد بيانات متاحة. يرجى تحميل ملف الطلاب أولاً.")
+    
+    with tab4:
+        st.subheader("👤 إدارة المستخدمين")
+        new_username = st.text_input("📌 اسم المستخدم الجديد:")
+        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
+        
+        if st.button("➕ إضافة مستخدم"):
+            if new_username and new_password:
+                USERS[new_username] = new_password
+                st.success("✅ تم إضافة المستخدم بنجاح!")
+            else:
+                st.error("⚠️ الرجاء إدخال اسم مستخدم وكلمة مرور صحيحة.")
