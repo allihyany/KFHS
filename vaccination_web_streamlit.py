@@ -57,6 +57,15 @@ else:
     with tab2:
         st.subheader("📊 تقرير حالة التطعيمات")
         if os.path.exists(DATA_FILE):
+            df = pd.read_excel(DATA_FILE)
+            
+            # التحقق من وجود الأعمدة المطلوبة وإضافتها إن لم تكن موجودة
+            required_columns = ["Vaccination Status"]
+            for col in required_columns:
+                if col not in df.columns:
+                    df[col] = "غير محدد"
+                    df.to_excel(DATA_FILE, index=False)
+            
             total_students = len(df)
             vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
             not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
