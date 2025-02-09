@@ -7,6 +7,16 @@ import streamlit.components.v1 as components
 # إعداد تصميم الواجهة باستخدام Streamlit
 st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
 
+# تطبيق تنسيقات مخصصة لجعل الواجهة RTL وتحسين الألوان
+st.markdown("""
+    <style>
+        body {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;}
+        .sidebar .sidebar-content {background: linear-gradient(135deg, #004e92, #000428); color: white;}
+        .stButton>button {background-color: #004e92; color: white; border-radius: 8px;}
+        .stMetric {text-align: center; background-color: #e0f2ff; padding: 10px; border-radius: 10px;}
+    </style>
+""", unsafe_allow_html=True)
+
 # بيانات تسجيل الدخول
 USERS = {"1058253616": "0502049396"}
 
@@ -42,13 +52,7 @@ df = st.session_state["df"]
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
-    st.markdown("""
-        <style>
-            .main {text-align: center; padding-top: 50px;}
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.title("🔐 تسجيل الدخول")
+    st.markdown("<h1 style='text-align: center; color: #004e92;'>🔐 تسجيل الدخول</h1>", unsafe_allow_html=True)
     username_input = st.text_input("📌 اسم المستخدم:", key="username")
     password_input = st.text_input("🔑 كلمة المرور:", type="password", key="password")
     
@@ -63,7 +67,8 @@ if not st.session_state["authenticated"]:
 else:
     # إنشاء أزرار التنقل
     st.sidebar.title("📌 القائمة الرئيسية")
-    page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"])
+    page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
+                            index=0, format_func=lambda x: f"🟦 {x}")
     
     if page == "📂 إدارة البيانات":
         st.title("📂 تحميل وإدارة ملف بيانات الطلاب")
@@ -84,53 +89,19 @@ else:
                 st.rerun()
     
     elif page == "📊 الإحصائيات":
-        st.title("📊 الإحصائيات")
+        st.title("📊 الإحصائيات المفصلة")
         if not df.empty:
             total_students = len(df)
             vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
             not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
             
-            st.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
-            st.metric(label="💉 عدد الطلاب الذين تم تطعيمهم", value=vaccinated_count)
-            st.metric(label="⚠️ عدد الطلاب غير المطعمين", value=not_vaccinated_count)
+            col1, col2, col3 = st.columns(3)
+            col1.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
+            col2.metric(label="💉 تم التطعيم", value=vaccinated_count)
+            col3.metric(label="⚠️ لم يتم التطعيم", value=not_vaccinated_count)
             
             fig, ax = plt.subplots()
-            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["green", "red"])
+            ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["#1e88e5", "#bbdefb"])
             st.pyplot(fig)
         else:
             st.warning("⚠️ لا توجد بيانات متاحة.")
-    
-    elif page == "🔍 البحث والتحديث":
-        st.title("🔍 البحث وتحديث بيانات الطلاب")
-        if not df.empty:
-            class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
-            section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df["Section"].dropna().unique().tolist()))
-            
-            filtered_df = df.copy()
-            if class_filter != "كل الصفوف":
-                filtered_df = filtered_df[filtered_df["Class"] == class_filter]
-            if section_filter != "كل الفصول":
-                filtered_df = filtered_df[filtered_df["Section"] == section_filter]
-            
-            if not filtered_df.empty:
-                selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df.index, 
-                                                format_func=lambda x: f"{filtered_df.loc[x, 'Name']} - {filtered_df.loc[x, 'ID Number']}")
-                student = filtered_df.loc[selected_student]
-                st.text(f"👤 الاسم: {student['Name']}")
-                st.text(f"🆔 رقم الهوية: {student['ID Number']}")
-                vaccination_status = st.radio("💉 حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"], key="vaccination")
-                if st.button("💾 تحديث البيانات", use_container_width=True):
-                    df.at[selected_student, "Vaccination Status"] = vaccination_status
-                    df.to_excel(DATA_FILE, index=False)
-                    st.success("✅ تم تحديث البيانات بنجاح!")
-                    st.rerun()
-    
-    elif page == "👤 إدارة المستخدمين":
-        st.title("👤 إدارة المستخدمين")
-        new_username = st.text_input("📌 اسم المستخدم الجديد:")
-        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
-        
-        if st.button("➕ إضافة مستخدم", use_container_width=True):
-            if new_username and new_password:
-                USERS[new_username] = new_password
-                st.success("✅ تم إضافة المستخدم بنجاح!")
