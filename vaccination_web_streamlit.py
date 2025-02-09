@@ -2,19 +2,18 @@ import streamlit as st
 import pandas as pd
 import os
 
-# تحميل ملف البيانات من الملف المحدد فقط
-file_path = "/mnt/data/الملك فهد.xlsx"
-
-# التحقق مما إذا كان ملف Excel موجودًا
-if os.path.exists(file_path):
-    df = pd.read_excel(file_path)
-else:
-    st.error("❌ ملف البيانات غير موجود! يرجى رفع الملف الصحيح.")
-    st.stop()
-
 # واجهة Streamlit
 st.title("🩺 نظام تسجيل التطعيمات للطلاب")
-st.write("قم بالبحث عن الطالب وتحديث حالته الصحية.")
+st.write("قم برفع ملف البيانات والبحث عن الطالب وتحديث حالته الصحية.")
+
+# السماح للمستخدم برفع ملف Excel
+uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف Excel", type=["xlsx"])
+
+if uploaded_file is not None:
+    df = pd.read_excel(uploaded_file)
+else:
+    st.warning("⚠️ يرجى تحميل ملف بيانات الطلاب!")
+    st.stop()
 
 # البحث عن الطالب
 search_query = st.text_input("🔍 البحث عن الطالب (الاسم أو رقم الهوية):")
@@ -53,7 +52,6 @@ if search_query:
         if st.button("💾 تحديث البيانات"):
             df.at[selected_index, "Vaccination Status"] = vaccination_status
             df.at[selected_index, "Reason"] = reason if vaccination_status == "لم يتم التطعيم" else ""
-            df.to_excel(file_path, index=False)
             st.success("✅ تم تحديث البيانات بنجاح!")
             st.experimental_rerun()
     else:
