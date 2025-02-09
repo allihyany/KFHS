@@ -131,7 +131,7 @@ if st.session_state["authenticated"]:
     if page == "رفع البيانات":
         st.session_state["active_page"] = "upload_data"
     elif page == "التقارير":
-        st.session_state["active_page"] = "reports"
+        st.session_state["active_page"] = "manage_data"
     elif page == "إدارة البيانات":
         st.session_state["active_page"] = "manage_data"
     elif page == "إعدادات":
@@ -155,85 +155,37 @@ if st.session_state["active_page"] == "login":
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 
-# صفحة رفع البيانات
-if st.session_state["active_page"] == "upload_data":
-    st.markdown("<div class='main-header'>📤 رفع البيانات</div>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("🔼 قم برفع ملف Excel يحتوي على بيانات الطلاب:", type=["xlsx"])
-
-    if uploaded_file is not None:
-        try:
-            new_data = pd.read_excel(uploaded_file)
-            st.session_state["df"] = pd.concat([df, new_data], ignore_index=True).drop_duplicates()
-            st.session_state["df"].to_excel(DATA_FILE, index=False)
-            st.success("✅ تم رفع البيانات بنجاح!")
-        except Exception as e:
-            st.error(f"❌ حدث خطأ أثناء رفع الملف: {e}")
-
-    if st.button("🔙 العودة إلى التقارير", key="back_to_reports"):
-        st.session_state["active_page"] = "reports"
-
-# صفحة التقارير
-if st.session_state["active_page"] == "reports":
-    st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
-    if not df.empty:
-        st.write("📌 **إنشاء التقارير حسب الفئات المختلفة**")
-
-        class_selected = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
-        section_selected = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_selected]["Section"].dropna().unique().tolist()) if class_selected != "كل الصفوف" else [])
-
-        filtered_df = df.copy()
-        if class_selected != "كل الصفوف":
-            filtered_df = filtered_df[filtered_df["Class"] == class_selected]
-        if section_selected:
-            filtered_df = filtered_df[filtered_df["Section"] == section_selected]
-
-        if not filtered_df.empty:
-            st.write("📌 **تقرير الفصل المحدد**")
-            st.dataframe(filtered_df)
-
-    if st.button("🔙 العودة إلى التقارير"):
-        st.session_state["active_page"] = "reports"
-
 # صفحة إدارة البيانات
 if st.session_state["active_page"] == "manage_data":
     st.markdown("<div class='main-header'>⚙️ إدارة البيانات</div>", unsafe_allow_html=True)
     st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
 
-    # إدخال البيانات
-    with st.form("add_student_form"):
-        st.subheader("إضافة بيانات الطالب")
-        name = st.text_input("اسم الطالب")
-        id_number = st.text_input("رقم الهوية")
-        student_class = st.text_input("الصف")
-        section = st.text_input("الفصل")
-        gender = st.selectbox("الجنس", ["ذكر", "أنثى"])
-        dob = st.date_input("تاريخ الميلاد")
-        phone = st.text_input("رقم الهاتف")
-        vaccination_status = st.selectbox("حالة التطعيم", ["تم التطعيم", "لم يتم التطعيم"])
-        submit = st.form_submit_button("إضافة الطالب")
+    # تصفية البيانات حسب الصف والفصل
+    class_filter = st.multiselect("اختر الصفوف", options=sorted(df["Class"].unique()), default=sorted(df["Class"].unique()))
+    section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()))
 
-        if submit:
-            new_data = {
-                "Name": name,
-                "ID Number": id_number,
-                "Class": student_class,
-                "Section": section,
-                "Gender": gender,
-                "Date of Birth": dob,
-                "Phone Number": phone,
-                "Vaccination Status": vaccination_status
-            }
-            df = df.append(new_data, ignore_index=True)
+    filtered_df = df[df["Class"].isin(class_filter) & df["Section"].isin(section_filter)]
+
+    # اختيار الطالب من قائمة منسدلة
+    student_names = filtered_df["Name"].tolist()
+    selected_student = st.selectbox("اختر الطالب", options=student_names)
+
+    # عرض بيانات الطالب
+    if selected_student:
+        student_data = filtered_df[filtered_df["Name"] == selected_student].iloc[0]
+        st.write("### بيانات الطالب")
+        st.write(f"**الاسم:** {student_data['Name']}")
+        st.write(f"**رقم الهوية:** {student_data['ID Number']}")
+        st.write(f"**الصف:** {student_data['Class']}")
+        st.write(f"**الفصل:** {student_data['Section']}")
+        st.write(f"**حالة التطعيم:** {student_data['Vaccination Status']}")
+
+        # تحديث حالة التطعيم
+        new_status = st.radio("تحديث حالة التطعيم", ["تم التطعيم", "لم يتم التطعيم"], index=0 if student_data["Vaccination Status"] == "تم التطعيم" else 1)
+        if st.button("تحديث الحالة"):
+            df.loc[df["ID Number"] == student_data["ID Number"], "Vaccination Status"] = new_status
             df.to_excel(DATA_FILE, index=False)
-            st.success("✅ تم إضافة الطالب بنجاح!")
+            st.success("✅ تم تحديث حالة التطعيم بنجاح!")
 
-    if st.button("🔙 العودة إلى التقارير"):
-        st.session_state["active_page"] = "reports"
-
-# صفحة الإعدادات
-if st.session_state["active_page"] == "settings":
-    st.markdown("<div class='main-header'>⚙️ الإعدادات</div>", unsafe_allow_html=True)
-    st.write("🛠️ قم بتخصيص الإعدادات الخاصة بك هنا.")
-
-    if st.button("🔙 العودة إلى التقارير"):
+    if st.button("🔙 العودة إلى التقارير", key="back_to_reports_manage_data"):
         st.session_state["active_page"] = "reports"
