@@ -18,7 +18,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1058253616": "0502049396"}
+USERS = {"1": "1"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
@@ -53,13 +53,17 @@ df = st.session_state["df"]
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
     st.markdown("<h1 style='text-align: center; color: #004e92;'>🔐 تسجيل الدخول</h1>", unsafe_allow_html=True)
-    username_input = st.text_input("📌 اسم المستخدم:", key="username")
+    username_input = st.text_input("📌 اسم المستخدم:")
     password_input = st.text_input("🔑 كلمة المرور:", type="password", key="password")
     
     if st.button("🚀 تسجيل الدخول", use_container_width=True):
         if username_input in USERS and USERS[username_input] == password_input:
             st.session_state["authenticated"] = True
+            if username_input in USERS and USERS[username_input] == password_input:
+            st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
+            st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
+            st.rerun()
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
             st.rerun()
         else:
