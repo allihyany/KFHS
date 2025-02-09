@@ -3,7 +3,8 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import plotly.express as px
-from fpdf import FPDF
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # إعداد تصميم الواجهة بأسلوب حديث
 st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
@@ -30,7 +31,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1058253616": "0502049396"}
+USERS = {"1": "1"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
@@ -70,43 +71,34 @@ if st.session_state["df"] is None:
 
 df = st.session_state["df"]
 
-# وظيفة لإنشاء ملف PDF
-class PDF(FPDF):
-    def header(self):
-        self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'تقرير الطلاب', border=0, ln=1, align='C')
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'صفحة {self.page_no()}', align='C')
-
-    def add_table(self, data):
-        self.set_font('Arial', '', 10)
-        for row in data:
-            self.cell(40, 10, row[0], border=1)
-            self.cell(30, 10, row[1], border=1)
-            self.cell(30, 10, row[2], border=1)
-            self.cell(30, 10, row[3], border=1)
-            self.cell(60, 10, row[4], border=1, ln=1)
-
-# إنشاء PDF من البيانات
+# وظيفة لإنشاء ملف PDF باستخدام reportlab
 def create_pdf(dataframe, filename):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, 'تقرير الطلاب', border=0, ln=1, align='C')
-    pdf.ln(10)
+    c = canvas.Canvas(filename, pagesize=letter)
+    c.setFont("Helvetica", 12)
 
-    pdf.set_font('Arial', '', 10)
-    for i, row in dataframe.iterrows():
-        pdf.cell(40, 10, str(row["Name"]), border=1)
-        pdf.cell(30, 10, str(row["ID Number"]), border=1)
-        pdf.cell(30, 10, str(row["Class"]), border=1)
-        pdf.cell(30, 10, str(row["Section"]), border=1)
-        pdf.cell(60, 10, str(row["Vaccination Status"]), border=1, ln=1)
+    c.drawString(100, 750, "تقرير الطلاب")
 
-    pdf.output(filename)
+    x, y = 50, 700
+    headers = ["الاسم", "رقم الهوية", "الصف", "الفصل", "حالة التطعيم"]
+    for header in headers:
+        c.drawString(x, y, header)
+        x += 100
+
+    y -= 20
+    x = 50
+
+    for index, row in dataframe.iterrows():
+        c.drawString(50, y, str(row["Name"]))
+        c.drawString(150, y, str(row["ID Number"]))
+        c.drawString(250, y, str(row["Class"]))
+        c.drawString(350, y, str(row["Section"]))
+        c.drawString(450, y, str(row["Vaccination Status"]))
+        y -= 20
+        if y < 50:
+            c.showPage()
+            y = 700
+
+    c.save()
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
