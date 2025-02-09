@@ -126,15 +126,15 @@ def create_pdf(dataframe, filename):
 # قائمة التنقل الجانبية
 if st.session_state["authenticated"]:
     st.sidebar.title("📋 التنقل")
-    page = st.sidebar.radio("اختر الصفحة:", ["رفع البيانات", "التقارير", "إدارة البيانات", "إعدادات", "تسجيل الخروج"])
+    page = st.sidebar.radio("اختر الصفحة:", ["رفع البيانات", "التقارير", "إدارة الطلاب", "الإعدادات", "تسجيل الخروج"])
 
     if page == "رفع البيانات":
         st.session_state["active_page"] = "upload_data"
     elif page == "التقارير":
-        st.session_state["active_page"] = "manage_data"
-    elif page == "إدارة البيانات":
-        st.session_state["active_page"] = "manage_data"
-    elif page == "إعدادات":
+        st.session_state["active_page"] = "reports"
+    elif page == "إدارة الطلاب":
+        st.session_state["active_page"] = "manage_students"
+    elif page == "الإعدادات":
         st.session_state["active_page"] = "settings"
     elif page == "تسجيل الخروج":
         st.session_state["active_page"] = "login"
@@ -150,14 +150,14 @@ if st.session_state["active_page"] == "login":
         if username_input in USERS and USERS[username_input] == password_input:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
-            st.session_state["active_page"] = "reports"
+            st.session_state["active_page"] = "manage_students"
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 
-# صفحة إدارة البيانات
-if st.session_state["active_page"] == "manage_data":
-    st.markdown("<div class='main-header'>⚙️ إدارة البيانات</div>", unsafe_allow_html=True)
+# صفحة إدارة الطلاب
+if st.session_state["active_page"] == "manage_students":
+    st.markdown("<div class='main-header'>⚙️ إدارة الطلاب</div>", unsafe_allow_html=True)
     st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
 
     # تصفية البيانات حسب الصف والفصل
@@ -187,5 +187,52 @@ if st.session_state["active_page"] == "manage_data":
             df.to_excel(DATA_FILE, index=False)
             st.success("✅ تم تحديث حالة التطعيم بنجاح!")
 
-    if st.button("🔙 العودة إلى التقارير", key="back_to_reports_manage_data"):
+    if st.button("🔙 العودة إلى التقارير", key="back_to_reports_manage_students"):
         st.session_state["active_page"] = "reports"
+
+# صفحة رفع البيانات
+if st.session_state["active_page"] == "upload_data":
+    st.markdown("<div class='main-header'>📤 رفع البيانات</div>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("🔼 قم برفع ملف Excel يحتوي على بيانات الطلاب:", type=["xlsx"])
+
+    if uploaded_file is not None:
+        try:
+            new_data = pd.read_excel(uploaded_file)
+            st.session_state["df"] = pd.concat([df, new_data], ignore_index=True).drop_duplicates()
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
+            st.success("✅ تم رفع البيانات بنجاح!")
+        except Exception as e:
+            st.error(f"❌ حدث خطأ أثناء رفع الملف: {e}")
+
+    if st.button("🔙 العودة إلى إدارة الطلاب", key="back_to_manage_students"):
+        st.session_state["active_page"] = "manage_students"
+
+# صفحة التقارير
+if st.session_state["active_page"] == "reports":
+    st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
+    if not df.empty:
+        st.write("📌 **إنشاء التقارير حسب الفئات المختلفة**")
+
+        class_selected = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
+        section_selected = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_selected]["Section"].dropna().unique().tolist()) if class_selected != "كل الصفوف" else [])
+
+        filtered_df = df.copy()
+        if class_selected != "كل الصفوف":
+            filtered_df = filtered_df[filtered_df["Class"] == class_selected]
+        if section_selected:
+            filtered_df = filtered_df[filtered_df["Section"] == section_selected]
+
+        if not filtered_df.empty:
+            st.write("📌 **تقرير الفصل المحدد**")
+            st.dataframe(filtered_df)
+
+    if st.button("🔙 العودة إلى إدارة الطلاب", key="back_to_manage_students_reports"):
+        st.session_state["active_page"] = "manage_students"
+
+# صفحة الإعدادات
+if st.session_state["active_page"] == "settings":
+    st.markdown("<div class='main-header'>⚙️ الإعدادات</div>", unsafe_allow_html=True)
+    st.write("🛠️ قم بتخصيص الإعدادات الخاصة بك هنا.")
+
+    if st.button("🔙 العودة إلى إدارة الطلاب", key="back_to_manage_students_settings"):
+        st.session_state["active_page"] = "manage_students"
