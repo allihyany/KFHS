@@ -20,7 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1": "1"}
+USERS = {"1058253616": "0502049396"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
@@ -37,13 +37,21 @@ DATA_FILE = "student_data.xlsx"
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
-            return pd.read_excel(DATA_FILE)
+            df = pd.read_excel(DATA_FILE)
         except Exception:
             st.warning("⚠️ الملف تالف أو غير صالح، سيتم إعادة إنشائه.")
             os.remove(DATA_FILE)
+            df = pd.DataFrame()
+    else:
+        df = pd.DataFrame()
     
-    df = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Gender", "Date of Birth", "Phone Number", "Vaccination Status"])
-    df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية
+    # التحقق من وجود الأعمدة المطلوبة
+    required_columns = ["Name", "ID Number", "Class", "Section", "Gender", "Date of Birth", "Phone Number", "Vaccination Status"]
+    for col in required_columns:
+        if col not in df.columns:
+            df[col] = "غير محدد"
+    
+    df["Vaccination Status"] = df["Vaccination Status"].fillna("لم يتم التطعيم")
     df.to_excel(DATA_FILE, index=False)
     return df
 
@@ -72,33 +80,19 @@ else:
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
-    if page == "📂 إدارة البيانات":
-        st.markdown("<div class='main-header'>📂 إدارة البيانات</div>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"], key="upload")
-        
-        if uploaded_file is not None:
-            st.session_state["df"] = pd.read_excel(uploaded_file)
-            st.session_state["df"]["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية عند التحميل
-            st.session_state["df"].to_excel(DATA_FILE, index=False)
-            st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
-            st.rerun()
-        
-        if os.path.exists(DATA_FILE):
-            if st.button("🗑️ حذف البيانات", use_container_width=True):
-                os.remove(DATA_FILE)
-                st.session_state["df"] = None
-                st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
-                st.rerun()
-    
-    elif page == "📊 الإحصائيات":
+    if page == "📊 الإحصائيات":
         st.markdown("<div class='main-header'>📊 الإحصائيات التفصيلية</div>", unsafe_allow_html=True)
         if not df.empty:
             total_students = len(df)
             vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
             not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
             
-            male_students = len(df[df["Gender"] == "ذكر"])
-            female_students = len(df[df["Gender"] == "أنثى"])
+            # التحقق من وجود عمود الجنس قبل استخدامه
+            if "Gender" in df.columns:
+                male_students = len(df[df["Gender"] == "ذكر"])
+                female_students = len(df[df["Gender"] == "أنثى"])
+            else:
+                male_students = female_students = 0
             
             col1, col2, col3, col4, col5 = st.columns(5)
             col1.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
