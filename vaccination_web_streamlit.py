@@ -123,23 +123,8 @@ def create_pdf(dataframe, filename):
 
     c.save()
 
-# واجهة تسجيل الدخول
-if st.session_state["active_page"] == "login":
-    st.markdown("<div class='main-header'>🔐 تسجيل الدخول</div>", unsafe_allow_html=True)
-    username_input = st.text_input("📌 اسم المستخدم:")
-    password_input = st.text_input("🔑 كلمة المرور:", type="password")
-    
-    if st.button("🚀 تسجيل الدخول", use_container_width=True):
-        if username_input in USERS and USERS[username_input] == password_input:
-            st.session_state["authenticated"] = True
-            st.session_state["username"] = username_input
-            st.session_state["active_page"] = "dashboard"
-            st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-        else:
-            st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
-
-# قائمة التنقل
-elif st.session_state["active_page"] == "dashboard":
+# قائمة التنقل الجانبية
+if st.session_state["authenticated"]:
     st.sidebar.title("📋 التنقل")
     page = st.sidebar.radio("اختر الصفحة:", ["التقارير", "إدارة البيانات", "إعدادات", "تسجيل الخروج"])
 
@@ -152,6 +137,21 @@ elif st.session_state["active_page"] == "dashboard":
     elif page == "تسجيل الخروج":
         st.session_state["active_page"] = "login"
         st.session_state["authenticated"] = False
+
+# واجهة تسجيل الدخول
+if st.session_state["active_page"] == "login":
+    st.markdown("<div class='main-header'>🔐 تسجيل الدخول</div>", unsafe_allow_html=True)
+    username_input = st.text_input("📌 اسم المستخدم:")
+    password_input = st.text_input("🔑 كلمة المرور:", type="password")
+    
+    if st.button("🚀 تسجيل الدخول", use_container_width=True):
+        if username_input in USERS and USERS[username_input] == password_input:
+            st.session_state["authenticated"] = True
+            st.session_state["username"] = username_input
+            st.session_state["active_page"] = "reports"
+            st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
+        else:
+            st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 
 # صفحة التقارير
 if st.session_state["active_page"] == "reports":
@@ -172,21 +172,21 @@ if st.session_state["active_page"] == "reports":
             st.write("📌 **تقرير الفصل المحدد**")
             st.dataframe(filtered_df)
 
-    if st.button("🔙 العودة إلى لوحة التحكم"):
-        st.session_state["active_page"] = "dashboard"
+    if st.button("🔙 العودة إلى التقارير"):
+        st.session_state["active_page"] = "reports"
 
 # صفحة إدارة البيانات
 if st.session_state["active_page"] == "manage_data":
     st.markdown("<div class='main-header'>⚙️ إدارة البيانات</div>", unsafe_allow_html=True)
     st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
 
-    if st.button("🔙 العودة إلى لوحة التحكم"):
-        st.session_state["active_page"] = "dashboard"
+    if st.button("🔙 العودة إلى التقارير"):
+        st.session_state["active_page"] = "reports"
 
 # صفحة الإعدادات
 if st.session_state["active_page"] == "settings":
     st.markdown("<div class='main-header'>⚙️ الإعدادات</div>", unsafe_allow_html=True)
     st.write("🛠️ قم بتخصيص الإعدادات الخاصة بك هنا.")
 
-    if st.button("🔙 العودة إلى لوحة التحكم"):
-        st.session_state["active_page"] = "dashboard"
+    if st.button("🔙 العودة إلى التقارير"):
+        st.session_state["active_page"] = "reports"
