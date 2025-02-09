@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import streamlit.components.v1 as components
+
+# إعداد تصميم الواجهة باستخدام Streamlit
+st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
 
 # بيانات تسجيل الدخول
 USERS = {"1058253616": "0502049396"}
@@ -38,11 +42,17 @@ df = st.session_state["df"]
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
-    st.title("🔐 تسجيل الدخول")
-    username_input = st.text_input("اسم المستخدم:")
-    password_input = st.text_input("كلمة المرور:", type="password")
+    st.markdown("""
+        <style>
+            .main {text-align: center; padding-top: 50px;}
+        </style>
+    """, unsafe_allow_html=True)
     
-    if st.button("تسجيل الدخول"):
+    st.title("🔐 تسجيل الدخول")
+    username_input = st.text_input("📌 اسم المستخدم:", key="username")
+    password_input = st.text_input("🔑 كلمة المرور:", type="password", key="password")
+    
+    if st.button("🚀 تسجيل الدخول", use_container_width=True):
         if username_input in USERS and USERS[username_input] == password_input:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
@@ -51,12 +61,13 @@ if not st.session_state["authenticated"]:
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
-    # إنشاء تبويبات
-    tab1, tab2, tab3, tab4 = st.tabs(["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"])
+    # إنشاء أزرار التنقل
+    st.sidebar.title("📌 القائمة الرئيسية")
+    page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"])
     
-    with tab1:
-        st.subheader("📂 تحميل وإدارة ملف بيانات الطلاب")
-        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"])
+    if page == "📂 إدارة البيانات":
+        st.title("📂 تحميل وإدارة ملف بيانات الطلاب")
+        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"], key="upload")
         
         if uploaded_file is not None:
             st.session_state["df"] = pd.read_excel(uploaded_file)
@@ -64,28 +75,24 @@ else:
             st.session_state["df"].to_excel(DATA_FILE, index=False)
             st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
             st.rerun()
-        elif os.path.exists(DATA_FILE):
-            st.info("📁 تم تحميل ملف البيانات مسبقًا.")
-        else:
-            st.warning("⚠️ لم يتم تحميل أي بيانات بعد. الرجاء رفع ملف جديد.")
         
-        # زر لحذف البيانات
-        if os.path.exists(DATA_FILE) and st.button("🗑️ حذف البيانات"):
-            os.remove(DATA_FILE)
-            st.session_state["df"] = None
-            st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
-            st.rerun()
+        if os.path.exists(DATA_FILE):
+            if st.button("🗑️ حذف البيانات", use_container_width=True):
+                os.remove(DATA_FILE)
+                st.session_state["df"] = None
+                st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
+                st.rerun()
     
-    with tab2:
-        st.subheader("📊 الإحصائيات")
+    elif page == "📊 الإحصائيات":
+        st.title("📊 الإحصائيات")
         if not df.empty:
             total_students = len(df)
             vaccinated_count = len(df[df["Vaccination Status"] == "تم التطعيم"])
             not_vaccinated_count = len(df[df["Vaccination Status"] == "لم يتم التطعيم"])
             
-            st.text(f"👨‍🎓 إجمالي عدد الطلاب: {total_students}")
-            st.text(f"💉 عدد الطلاب الذين تم تطعيمهم: {vaccinated_count}")
-            st.text(f"⚠️ عدد الطلاب غير المطعمين: {not_vaccinated_count}")
+            st.metric(label="👨‍🎓 إجمالي عدد الطلاب", value=total_students)
+            st.metric(label="💉 عدد الطلاب الذين تم تطعيمهم", value=vaccinated_count)
+            st.metric(label="⚠️ عدد الطلاب غير المطعمين", value=not_vaccinated_count)
             
             fig, ax = plt.subplots()
             ax.pie([vaccinated_count, not_vaccinated_count], labels=["تم التطعيم", "لم يتم التطعيم"], autopct="%1.1f%%", colors=["green", "red"])
@@ -93,8 +100,8 @@ else:
         else:
             st.warning("⚠️ لا توجد بيانات متاحة.")
     
-    with tab3:
-        st.subheader("🔍 البحث وتحديث بيانات الطلاب")
+    elif page == "🔍 البحث والتحديث":
+        st.title("🔍 البحث وتحديث بيانات الطلاب")
         if not df.empty:
             class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
             section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df["Section"].dropna().unique().tolist()))
@@ -111,26 +118,19 @@ else:
                 student = filtered_df.loc[selected_student]
                 st.text(f"👤 الاسم: {student['Name']}")
                 st.text(f"🆔 رقم الهوية: {student['ID Number']}")
-                st.text(f"🏫 الصف: {student['Class']}")
-                st.text(f"📚 الفصل: {student['Section']}")
-                vaccination_status = st.selectbox("💉 حالة التطعيم:", ["", "تم التطعيم", "لم يتم التطعيم"], 
-                                                  index=["", "تم التطعيم", "لم يتم التطعيم"].index(student.get("Vaccination Status", "")) if pd.notna(student.get("Vaccination Status")) else 0)
-                if st.button("💾 تحديث البيانات"):
+                vaccination_status = st.radio("💉 حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"], key="vaccination")
+                if st.button("💾 تحديث البيانات", use_container_width=True):
                     df.at[selected_student, "Vaccination Status"] = vaccination_status
                     df.to_excel(DATA_FILE, index=False)
                     st.success("✅ تم تحديث البيانات بنجاح!")
                     st.rerun()
-            else:
-                st.warning("⚠️ لا يوجد طلاب مطابقون للمعايير المحددة.")
     
-    with tab4:
-        st.subheader("👤 إدارة المستخدمين")
+    elif page == "👤 إدارة المستخدمين":
+        st.title("👤 إدارة المستخدمين")
         new_username = st.text_input("📌 اسم المستخدم الجديد:")
         new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
         
-        if st.button("➕ إضافة مستخدم"):
+        if st.button("➕ إضافة مستخدم", use_container_width=True):
             if new_username and new_password:
                 USERS[new_username] = new_password
                 st.success("✅ تم إضافة المستخدم بنجاح!")
-            else:
-                st.error("⚠️ الرجاء إدخال اسم مستخدم وكلمة مرور صحيحة.")
