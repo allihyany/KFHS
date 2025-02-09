@@ -4,16 +4,18 @@ import os
 import matplotlib.pyplot as plt
 import streamlit.components.v1 as components
 
-# إعداد تصميم الواجهة باستخدام Streamlit
+# إعداد تصميم الواجهة بأسلوب يشبه Oracle
 st.set_page_config(page_title="نظام تسجيل التطعيمات", page_icon="💉", layout="wide")
 
-# تطبيق تنسيقات مخصصة لجعل الواجهة RTL وتحسين الألوان
+# تطبيق تنسيقات مخصصة لجعل الواجهة RTL وتحسين الألوان بأسلوب Oracle
 st.markdown("""
     <style>
-        body {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;}
-        .sidebar .sidebar-content {background: linear-gradient(135deg, #004e92, #000428); color: white;}
-        .stButton>button {background-color: #004e92; color: white; border-radius: 8px;}
-        .stMetric {text-align: center; background-color: #e0f2ff; padding: 10px; border-radius: 10px;}
+        body {direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; background-color: #f4f6f9;}
+        .sidebar .sidebar-content {background: linear-gradient(135deg, #283e4a, #1f2a36); color: white; padding: 20px;}
+        .stButton>button {background-color: #1f77b4; color: white; border-radius: 8px; font-size: 16px;}
+        .stMetric {text-align: center; background-color: #e8f0fe; padding: 10px; border-radius: 10px;}
+        .main-header {background-color: #1f2a36; color: white; padding: 15px; text-align: center; font-size: 24px; border-radius: 5px;}
+        .card {background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);}
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,7 +54,7 @@ df = st.session_state["df"]
 
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
-    st.markdown("<h1 style='text-align: center; color: #004e92;'>🔐 تسجيل الدخول</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='main-header'>🔐 تسجيل الدخول</div>", unsafe_allow_html=True)
     username_input = st.text_input("📌 اسم المستخدم:")
     password_input = st.text_input("🔑 كلمة المرور:", type="password")
     
@@ -65,13 +67,13 @@ if not st.session_state["authenticated"]:
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
-    # إنشاء أزرار التنقل
+    # إنشاء أزرار التنقل بأسلوب Oracle
     st.sidebar.title("📌 القائمة الرئيسية")
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
     if page == "🔍 البحث والتحديث":
-        st.title("🔍 البحث وتحديث بيانات الطلاب")
+        st.markdown("<div class='main-header'>🔍 البحث وتحديث بيانات الطلاب</div>", unsafe_allow_html=True)
         if not df.empty:
             class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
             section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df["Section"].dropna().unique().tolist()))
@@ -96,7 +98,7 @@ else:
                     st.rerun()
     
     elif page == "👤 إدارة المستخدمين":
-        st.title("👤 إدارة المستخدمين")
+        st.markdown("<div class='main-header'>👤 إدارة المستخدمين</div>", unsafe_allow_html=True)
         new_username = st.text_input("📌 اسم المستخدم الجديد:")
         new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
         
