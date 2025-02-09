@@ -80,45 +80,25 @@ else:
     page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
-    if page == "📂 إدارة البيانات":
-        st.markdown("<div class='main-header'>📂 إدارة البيانات</div>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"], key="upload")
-        
-        if uploaded_file is not None:
-            st.session_state["df"] = pd.read_excel(uploaded_file)
-            st.session_state["df"]["Vaccination Status"] = "لم يتم التطعيم"
-            st.session_state["df"].to_excel(DATA_FILE, index=False)
-            st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
-            st.rerun()
-        
-        if os.path.exists(DATA_FILE):
-            st.write("📁 البيانات الحالية:")
-            st.dataframe(st.session_state["df"])
-            if st.button("🗑️ حذف البيانات", use_container_width=True):
-                os.remove(DATA_FILE)
-                st.session_state["df"] = None
-                st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
-                st.rerun()
-    
-    elif page == "🔍 البحث والتحديث":
+    if page == "🔍 البحث والتحديث":
         st.markdown("<div class='main-header'>🔍 البحث وتحديث بيانات الطلاب</div>", unsafe_allow_html=True)
         if not df.empty:
-            selected_student = st.selectbox("🔹 اختر الطالب:", df["Name"].unique())
-            student_data = df[df["Name"] == selected_student]
-            st.write(student_data)
-            new_status = st.radio("💉 تحديث حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"])
-            if st.button("💾 تحديث الحالة", use_container_width=True):
-                df.loc[df["Name"] == selected_student, "Vaccination Status"] = new_status
-                df.to_excel(DATA_FILE, index=False)
-                st.success("✅ تم تحديث البيانات بنجاح!")
-                st.rerun()
-    
-    elif page == "👤 إدارة المستخدمين":
-        st.markdown("<div class='main-header'>👤 إدارة المستخدمين</div>", unsafe_allow_html=True)
-        new_username = st.text_input("📌 اسم المستخدم الجديد:")
-        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
-        
-        if st.button("➕ إضافة مستخدم", use_container_width=True):
-            if new_username and new_password:
-                USERS[new_username] = new_password
-                st.success("✅ تم إضافة المستخدم بنجاح!")
+            class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
+            section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_filter]["Section"].dropna().unique().tolist()) if class_filter != "كل الصفوف" else [])
+            
+            filtered_df = df.copy()
+            if class_filter != "كل الصفوف":
+                filtered_df = filtered_df[filtered_df["Class"] == class_filter]
+            if section_filter:
+                filtered_df = filtered_df[filtered_df["Section"] == section_filter]
+            
+            if not filtered_df.empty:
+                selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df["Name"].unique())
+                student_data = filtered_df[filtered_df["Name"] == selected_student]
+                st.write(student_data)
+                new_status = st.radio("💉 تحديث حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"])
+                if st.button("💾 تحديث الحالة", use_container_width=True):
+                    df.loc[df["Name"] == selected_student, "Vaccination Status"] = new_status
+                    df.to_excel(DATA_FILE, index=False)
+                    st.success("✅ تم تحديث البيانات بنجاح!")
+                    st.rerun()
