@@ -27,11 +27,16 @@ st.markdown("""
             border-radius: 8px;
             font-weight: bold;
         }
+        .back-button {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1": "1"}
+USERS = {"1058253616": "0502049396"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
@@ -115,6 +120,17 @@ if not st.session_state["authenticated"]:
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
+    # زر العودة إلى الصفحة الرئيسية
+    def back_to_main():
+        st.session_state["authenticated"] = False
+        st.session_state["username"] = ""
+        st.experimental_rerun()
+
+    st.markdown("<div class='back-button'>", unsafe_allow_html=True)
+    if st.button("🔙 العودة إلى الصفحة الرئيسية (أعلى)", key="top-back-button"):
+        back_to_main()
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # عرض صفحة التقارير
     st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
     if not df.empty:
@@ -187,3 +203,8 @@ else:
             st.download_button("📥 تحميل التقرير الكامل (PDF)", f, file_name=pdf_file, mime="application/pdf")
     else:
         st.warning("⚠️ لا توجد بيانات متاحة لإنشاء التقارير.")
+
+    st.markdown("<div class='back-button'>", unsafe_allow_html=True)
+    if st.button("🔙 العودة إلى الصفحة الرئيسية (أسفل)", key="bottom-back-button"):
+        back_to_main()
+    st.markdown("</div>", unsafe_allow_html=True)
