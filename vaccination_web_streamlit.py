@@ -20,7 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # بيانات تسجيل الدخول
-USERS = {"1058253616": "0502049396"}
+USERS = {"1": "1"}
 
 # حالة الجلسة لتتبع تسجيل الدخول
 if "authenticated" not in st.session_state:
@@ -77,28 +77,30 @@ if not st.session_state["authenticated"]:
 else:
     # إنشاء أزرار التنقل بأسلوب مدرسي واضح وكبير
     st.sidebar.title("📌 القائمة الرئيسية")
-    page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"],
+    page = st.sidebar.radio("اختر الصفحة", ["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين", "📄 التقارير"],
                             index=0, format_func=lambda x: f"🟦 {x}")
     
-    if page == "🔍 البحث والتحديث":
-        st.markdown("<div class='main-header'>🔍 البحث وتحديث بيانات الطلاب</div>", unsafe_allow_html=True)
+    if page == "📄 التقارير":
+        st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
         if not df.empty:
-            class_filter = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
-            section_filter = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_filter]["Section"].dropna().unique().tolist()) if class_filter != "كل الصفوف" else [])
+            st.write("📌 **توليد تقرير لكل فصل دراسي**")
+            class_selected = st.selectbox("🏫 اختر الصف:", ["كل الصفوف"] + sorted(df["Class"].dropna().unique().tolist()))
+            section_selected = st.selectbox("📚 اختر الفصل:", ["كل الفصول"] + sorted(df[df["Class"] == class_selected]["Section"].dropna().unique().tolist()) if class_selected != "كل الصفوف" else [])
             
             filtered_df = df.copy()
-            if class_filter != "كل الصفوف":
-                filtered_df = filtered_df[filtered_df["Class"] == class_filter]
-            if section_filter:
-                filtered_df = filtered_df[filtered_df["Section"] == section_filter]
+            if class_selected != "كل الصفوف":
+                filtered_df = filtered_df[filtered_df["Class"] == class_selected]
+            if section_selected:
+                filtered_df = filtered_df[filtered_df["Section"] == section_selected]
             
             if not filtered_df.empty:
-                selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df["Name"].unique())
-                student_data = filtered_df[filtered_df["Name"] == selected_student]
-                st.write(student_data)
-                new_status = st.radio("💉 تحديث حالة التطعيم:", ["تم التطعيم", "لم يتم التطعيم"])
-                if st.button("💾 تحديث الحالة", use_container_width=True):
-                    df.loc[df["Name"] == selected_student, "Vaccination Status"] = new_status
-                    df.to_excel(DATA_FILE, index=False)
-                    st.success("✅ تم تحديث البيانات بنجاح!")
-                    st.rerun()
+                st.write("📌 **ملخص بيانات الفصل المحدد**")
+                st.dataframe(filtered_df)
+                
+                # زر لتنزيل التقرير كملف Excel
+                report_file = f"student_report_{class_selected}_{section_selected}.xlsx"
+                filtered_df.to_excel(report_file, index=False)
+                with open(report_file, "rb") as f:
+                    st.download_button("📥 تحميل التقرير كملف Excel", f, file_name=report_file, mime="application/vnd.ms-excel")
+            else:
+                st.warning("⚠️ لا توجد بيانات متاحة لهذا الفصل الدراسي.")
