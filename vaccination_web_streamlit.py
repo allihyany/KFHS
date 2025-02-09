@@ -61,6 +61,8 @@ if "username" not in st.session_state:
     st.session_state["username"] = ""
 if "df" not in st.session_state:
     st.session_state["df"] = None
+if "active_page" not in st.session_state:
+    st.session_state["active_page"] = "login"
 
 # تحديد مسار حفظ الملف
 DATA_FILE = "student_data.xlsx"
@@ -122,7 +124,7 @@ def create_pdf(dataframe, filename):
     c.save()
 
 # واجهة تسجيل الدخول
-if not st.session_state["authenticated"]:
+if st.session_state["active_page"] == "login":
     st.markdown("<div class='main-header'>🔐 تسجيل الدخول</div>", unsafe_allow_html=True)
     username_input = st.text_input("📌 اسم المستخدم:")
     password_input = st.text_input("🔑 كلمة المرور:", type="password")
@@ -131,16 +133,12 @@ if not st.session_state["authenticated"]:
         if username_input in USERS and USERS[username_input] == password_input:
             st.session_state["authenticated"] = True
             st.session_state["username"] = username_input
+            st.session_state["active_page"] = "main"
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
-            st.experimental_set_query_params(page="main")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
-else:
-    # زر العودة إلى الصفحة الرئيسية
-    def back_to_main():
-        st.session_state.clear()
-        st.experimental_set_query_params(page="login")
 
+elif st.session_state["active_page"] == "main":
     # عرض صفحة التقارير
     st.markdown("<div class='main-header'>📄 التقارير</div>", unsafe_allow_html=True)
     if not df.empty:
@@ -213,3 +211,6 @@ else:
             st.download_button("📥 تحميل التقرير الكامل (PDF)", f, file_name=pdf_file, mime="application/pdf")
     else:
         st.warning("⚠️ لا توجد بيانات متاحة لإنشاء التقارير.")
+
+    if st.button("🔙 تسجيل الخروج"):
+        st.session_state["active_page"] = "login"
