@@ -126,9 +126,11 @@ def create_pdf(dataframe, filename):
 # قائمة التنقل الجانبية
 if st.session_state["authenticated"]:
     st.sidebar.title("📋 التنقل")
-    page = st.sidebar.radio("اختر الصفحة:", ["التقارير", "إدارة البيانات", "إعدادات", "تسجيل الخروج"])
+    page = st.sidebar.radio("اختر الصفحة:", ["رفع البيانات", "التقارير", "إدارة البيانات", "إعدادات", "تسجيل الخروج"])
 
-    if page == "التقارير":
+    if page == "رفع البيانات":
+        st.session_state["active_page"] = "upload_data"
+    elif page == "التقارير":
         st.session_state["active_page"] = "reports"
     elif page == "إدارة البيانات":
         st.session_state["active_page"] = "manage_data"
@@ -152,6 +154,23 @@ if st.session_state["active_page"] == "login":
             st.success("✅ تسجيل الدخول ناجح! قم بالانتقال إلى التبويبات.")
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
+
+# صفحة رفع البيانات
+if st.session_state["active_page"] == "upload_data":
+    st.markdown("<div class='main-header'>📤 رفع البيانات</div>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("🔼 قم برفع ملف Excel يحتوي على بيانات الطلاب:", type=["xlsx"])
+
+    if uploaded_file is not None:
+        try:
+            new_data = pd.read_excel(uploaded_file)
+            st.session_state["df"] = pd.concat([df, new_data], ignore_index=True).drop_duplicates()
+            st.session_state["df"].to_excel(DATA_FILE, index=False)
+            st.success("✅ تم رفع البيانات بنجاح!")
+        except Exception as e:
+            st.error(f"❌ حدث خطأ أثناء رفع الملف: {e}")
+
+    if st.button("🔙 العودة إلى التقارير"):
+        st.session_state["active_page"] = "reports"
 
 # صفحة التقارير
 if st.session_state["active_page"] == "reports":
