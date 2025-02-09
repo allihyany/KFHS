@@ -79,8 +79,13 @@ else:
                 filtered_df = filtered_df[filtered_df["Section"] == section_filter]
             
             # اختيار الطالب من القائمة المنسدلة
-            selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df.index, 
-                                            format_func=lambda x: f"{filtered_df.loc[x, 'Name']} - {filtered_df.loc[x, 'ID Number']}")
+            if not filtered_df.empty:
+                selected_student = st.selectbox("🔹 اختر الطالب:", filtered_df.index, 
+                                                format_func=lambda x: f"{filtered_df.loc[x, 'Name']} - {filtered_df.loc[x, 'ID Number']}")
+                student = filtered_df.loc[selected_student]
+            else:
+                st.warning("⚠️ لا يوجد طلاب مطابقون للمعايير المحددة.")
+                st.stop()
             student = filtered_df.loc[selected_student]
             
             # عرض بيانات الطالب
