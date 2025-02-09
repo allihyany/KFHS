@@ -12,6 +12,16 @@ if "authenticated" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state["username"] = ""
 
+# تحديد مسار حفظ الملف
+DATA_FILE = "student_data.xlsx"
+
+# تحميل البيانات أو إنشاء ملف جديد إذا لم يكن موجودًا
+if os.path.exists(DATA_FILE):
+    df = pd.read_excel(DATA_FILE)
+else:
+    df = pd.DataFrame(columns=["Name", "ID Number", "Vaccination Status"])
+    df.to_excel(DATA_FILE, index=False)
+
 # واجهة تسجيل الدخول
 if not st.session_state["authenticated"]:
     st.title("🔐 تسجيل الدخول")
@@ -27,9 +37,6 @@ if not st.session_state["authenticated"]:
         else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
 else:
-    # تحديد مسار حفظ الملف
-    DATA_FILE = "student_data.xlsx"
-
     # إنشاء تبويبات
     tab1, tab2, tab3, tab4 = st.tabs(["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"])
     
@@ -43,7 +50,6 @@ else:
             st.success("✅ تم حفظ بيانات الطلاب بنجاح!")
             st.rerun()
         elif os.path.exists(DATA_FILE):
-            df = pd.read_excel(DATA_FILE)
             st.info("📁 تم تحميل ملف البيانات مسبقًا.")
         else:
             st.warning("⚠️ لم يتم تحميل أي بيانات بعد. الرجاء رفع ملف جديد.")
@@ -89,6 +95,7 @@ else:
     with tab3:
         st.subheader("🔍 البحث وتحديث بيانات الطلاب")
         if os.path.exists(DATA_FILE):
+            df = pd.read_excel(DATA_FILE)  # إعادة تحميل البيانات عند البحث
             search_query = st.text_input("🔍 البحث عن الطالب (الاسم أو رقم الهوية):")
             if search_query:
                 found_students = df[(df["Name"].str.contains(search_query, na=False, case=False)) | 
@@ -110,11 +117,3 @@ else:
                         st.rerun()
         else:
             st.warning("⚠️ لا توجد بيانات متاحة. يرجى تحميل ملف الطلاب أولاً.")
-    
-    with tab4:
-        st.subheader("👤 إدارة المستخدمين")
-        new_username = st.text_input("📌 اسم المستخدم الجديد:")
-        new_password = st.text_input("🔑 كلمة المرور الجديدة:", type="password")
-        if st.button("➕ إضافة مستخدم"):
-            USERS[new_username] = new_password
-            st.success("✅ تم إضافة المستخدم بنجاح!")
