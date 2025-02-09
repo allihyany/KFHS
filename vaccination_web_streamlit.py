@@ -163,7 +163,6 @@ if st.session_state["active_page"] == "manage_students":
     # تصفية البيانات حسب الصف والفصل
     section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()), key="section_filter")
     class_filter = st.multiselect("اختر الصفوف", options=sorted(df["Class"].unique()), default=sorted(df["Class"].unique()), key="class_filter")
-    section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()))
 
     filtered_df = df[df["Class"].isin(class_filter) & df["Section"].isin(section_filter)]
 
@@ -191,13 +190,19 @@ if st.session_state["active_page"] == "manage_students":
     if st.button("🔙 العودة إلى التقارير", key="back_to_reports_manage_students"):
         st.session_state["active_page"] = "reports"
 
-    if st.button("🗑️ حذف جميع الطلاب"):
+# صفحة رفع البيانات
+if st.session_state["active_page"] == "upload_data":
+    st.markdown("<div class='main-header'>📤 رفع البيانات</div>", unsafe_allow_html=True)
+
+    if st.button("🗑️ حذف جميع الطلاب", key="delete_all_students"):
         if st.session_state["df"].empty:
             st.warning("⚠️ لا توجد بيانات لحذفها.")
         else:
             st.session_state["df"] = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Gender", "Date of Birth", "Phone Number", "Vaccination Status"])
             st.session_state["df"].to_excel(DATA_FILE, index=False)
             st.success("✅ تم حذف جميع الطلاب بنجاح!")
+
+    uploaded_file = st.file_uploader("🔼 قم برفع ملف Excel يحتوي على بيانات الطلاب:", type=["xlsx"])
 
     if uploaded_file is not None:
         try:
