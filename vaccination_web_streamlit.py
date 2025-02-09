@@ -53,6 +53,6 @@ if search_query:
             df.at[selected_index, "Vaccination Status"] = vaccination_status
             df.at[selected_index, "Reason"] = reason if vaccination_status == "لم يتم التطعيم" else ""
             st.success("✅ تم تحديث البيانات بنجاح!")
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.warning("❌ لم يتم العثور على الطالب. حاول مرة أخرى.")
