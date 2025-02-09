@@ -20,6 +20,7 @@ if os.path.exists(DATA_FILE):
     df = pd.read_excel(DATA_FILE)
 else:
     df = pd.DataFrame(columns=["Name", "ID Number", "Class", "Section", "Vaccination Status"])
+    df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية
     df.to_excel(DATA_FILE, index=False)
 
 # واجهة تسجيل الدخول
@@ -39,6 +40,27 @@ if not st.session_state["authenticated"]:
 else:
     # إنشاء تبويبات
     tab1, tab2, tab3, tab4 = st.tabs(["📂 إدارة البيانات", "📊 الإحصائيات", "🔍 البحث والتحديث", "👤 إدارة المستخدمين"])
+    
+    with tab1:
+        st.subheader("📂 تحميل وإدارة ملف بيانات الطلاب")
+        uploaded_file = st.file_uploader("📂 الرجاء تحميل ملف بيانات الطلاب", type=["xlsx"])
+        
+        if uploaded_file is not None:
+            df = pd.read_excel(uploaded_file)
+            df["Vaccination Status"] = "لم يتم التطعيم"  # تعيين الحالة الافتراضية عند التحميل
+            df.to_excel(DATA_FILE, index=False)
+            st.success("✅ تم حفظ بيانات الطلاب بنجاح! وتم تعيين حالة التطعيم إلى 'لم يتم التطعيم'.")
+            st.rerun()
+        elif os.path.exists(DATA_FILE):
+            st.info("📁 تم تحميل ملف البيانات مسبقًا.")
+        else:
+            st.warning("⚠️ لم يتم تحميل أي بيانات بعد. الرجاء رفع ملف جديد.")
+        
+        # زر لحذف البيانات
+        if os.path.exists(DATA_FILE) and st.button("🗑️ حذف البيانات"):
+            os.remove(DATA_FILE)
+            st.warning("❌ تم حذف البيانات! يرجى تحميل ملف جديد.")
+            st.rerun()
     
     with tab3:
         st.subheader("🔍 البحث وتحديث بيانات الطلاب")
