@@ -161,8 +161,8 @@ if st.session_state["active_page"] == "manage_students":
     st.write("🔧 هنا يمكنك تعديل وإدارة بيانات الطلاب.")
 
     # تصفية البيانات حسب الصف والفصل
-    section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()))
-    class_filter = st.multiselect("اختر الصفوف", options=sorted(df["Class"].unique()), default=sorted(df["Class"].unique()))
+    section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()), key="section_filter")
+    class_filter = st.multiselect("اختر الصفوف", options=sorted(df["Class"].unique()), default=sorted(df["Class"].unique()), key="class_filter")
     section_filter = st.multiselect("اختر الفصول", options=sorted(df["Section"].unique()), default=sorted(df["Section"].unique()))
 
     filtered_df = df[df["Class"].isin(class_filter) & df["Section"].isin(section_filter)]
